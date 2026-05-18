@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users - Tally</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <h2>Tally Billing</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="invoices.html">Invoices</a>
+    <a href="users.html">Users</a>
+    <button onclick="logout()">Logout</button>
+  </nav>
+
+  <div class="container">
+    <h2>Add New User</h2>
+    <input type="text" id="newName" placeholder="Full Name">
+    <input type="email" id="newEmail" placeholder="Email">
+    <input type="password" id="newPass" placeholder="Password">
+    <button onclick="addUser()">Add User</button>
+
+    <h2>All Users</h2>
+    <div id="userList"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
