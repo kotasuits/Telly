@@ -1,121 +1,122 @@
 let currentUser = null;
+let currentItems = [];
 
-// Load data
-function loadData() {
-  let users = JSON.parse(localStorage.getItem('users')) || [];
-  if (users.length === 0) {
-    users = [{ id: 1, name: "Admin", email: "admin@tally.com", password: "123456", role: "admin" }];
-    localStorage.setItem('users', JSON.stringify(users));
-  }
-  let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-  return { users, invoices };
+// Load/Save Data
+function getData(key) {
+  return JSON.parse(localStorage.getItem(key)) || [];
+}
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
 }
 
-// Login
-function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const { users } = loadData();
-
-  const user = users.find(u => u.email === email && u.password === password);
-  if (user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = 'dashboard.html';
-  } else {
-    alert("Invalid credentials! Use admin@tally.com / 123456");
-  }
-}
-
-function logout() {
-  localStorage.removeItem('currentUser');
-  window.location.href = 'login.html';
-}
-
-// Check login
+// Check Login
 function checkLogin() {
   currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  if (!currentUser && window.location.pathname.includes('dashboard')) {
-    window.location.href = 'login.html';
-  }
-  if (currentUser && document.getElementById('username')) {
-    document.getElementById('username').textContent = currentUser.name;
-  }
+  if (!currentUser) window.location.href = 'login.html';
 }
 
-// Create Invoice
-function createInvoice() {
-  const customer = document.getElementById('customer').value;
-  const amount = parseFloat(document.getElementById('amount').value);
-  if (!customer || !amount) return alert("Fill all fields");
+// Add Item in Voucher
+function addItem() {
+  const itemName = document.getElementById('itemName').value;
+  const qty = parseFloat(document.getElementById('qty').value) || 1;
+  const rate = parseFloat(document.getElementById('rate').value) || 0;
+  const amount = qty * rate;
 
-  let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-  invoices.push({
-    id: Date.now(),
-    userId: currentUser.id,
-    invoiceNo: "INV-" + Date.now(),
-    customerName: customer,
-    date: new Date().toISOString().split('T')[0],
-    amount: amount,
-    status: "Pending"
-  });
-  localStorage.setItem('invoices', JSON.stringify(invoices));
-  alert("Invoice Created!");
-  loadInvoices();
+  if (!itemName || rate <= 0) return alert("Enter valid item details");
+
+  currentItems.push({ itemName, qty, rate, amount });
+  renderItems();
+  
+  // Clear fields
+  document.getElementById('itemName').value = '';
+  document.getElementById('rate').value = '';
 }
 
-// Load Invoices
-function loadInvoices() {
-  const div = document.getElementById('invoiceList');
-  if (!div) return;
-  let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-  let html = '<table border="1" width="100%"><tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Status</th></tr>';
-  invoices.forEach(inv => {
-    html += `<tr><td>${inv.date}</td><td>${inv.invoiceNo}</td><td>${inv.customerName}</td><td>₹${inv.amount}</td><td>${inv.status}</td></tr>`;
+function renderItems() {
+  const div = document.getElementById('itemList');
+  let html = '<table border="1" width="100%"><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>';
+  let total = 0;
+  currentItems.forEach((item, i) => {
+    html += `<tr><td>${item.itemName}</td><td>${item.qty}</td><td>${item.rate}</td><td>₹${item.amount}</td></tr>`;
+    total += item.amount;
   });
-  html += '</table>';
+  html += `<tr><td colspan="3"><b>Total</b></td><td><b>₹${total}</b></td></tr></table>`;
   div.innerHTML = html;
 }
 
-// Add User
-function addUser() {
-  const name = document.getElementById('newName').value;
-  const email = document.getElementById('newEmail').value;
-  const pass = document.getElementById('newPass').value;
-  if (!name || !email || !pass) return alert("All fields required");
+// Save Voucher (Main Tally-like function)
+function saveVoucher() {
+  const type = document.getElementById('voucherType').value;
+  const party = document.getElementById('partyName').value;
+  const date = document.getElementById('voucherDate').value || new Date().toISOString().split('T')[0];
 
-  let users = JSON.parse(localStorage.getItem('users')) || [];
-  users.push({ id: Date.now(), name, email, password: pass, role: "user" });
-  localStorage.setItem('users', JSON.stringify(users));
-  alert("User Added!");
-  loadUsers();
+  if (!party) return alert("Enter Party Name");
+
+  let vouchers = getData('vouchers');
+  const total = currentItems.reduce((sum, item) => sum + item.amount, 0);
+
+  vouchers.push({
+    id: Date.now(),
+    userId: currentUser.id,
+    voucherType: type,
+    voucherNo: type.substring(0,3).toUpperCase() + "-" + Date.now().toString().slice(-6),
+    partyName: party,
+    date: date,
+    items: [...currentItems],
+    total: total,
+    gst: (total * 0.18).toFixed(2)  // 18% GST example
+  });
+
+  saveData('vouchers', vouchers);
+  alert("Voucher Saved Successfully! (Like Tally)");
+  
+  currentItems = [];
+  renderItems();
+  document.getElementById('partyName').value = '';
 }
 
-function loadUsers() {
-  const div = document.getElementById('userList');
-  if (!div) return;
-  let users = JSON.parse(localStorage.getItem('users')) || [];
-  div.innerHTML = users.map(u => `<p>${u.name} (${u.email})</p>`).join('');
-}
-
-// Excel Export
-function exportAllToExcel() {
-  let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-  let csv = "Date,Invoice No,Customer,Amount,Status\n";
-  invoices.forEach(i => {
-    csv += `${i.date},${i.invoiceNo},${i.customerName},${i.amount},${i.status}\n`;
+// Export to Excel (Real Ledger Style)
+function exportToExcel() {
+  let vouchers = getData('vouchers');
+  let csv = "Date,Voucher Type,Voucher No,Party,Total,GST\n";
+  
+  vouchers.forEach(v => {
+    csv += `${v.date},${v.voucherType},${v.voucherNo},${v.partyName},${v.total},${v.gst}\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'Tally_Ledger.csv';
+  link.download = `Tally_Ledger_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  alert("Downloaded as CSV (Open in Excel)");
 }
 
-// Initialize
+// Parties Management
+function addParty() {
+  const name = document.getElementById('partyNameNew').value;
+  const type = document.getElementById('partyType').value;
+  if (!name) return alert("Enter Party Name");
+
+  let parties = getData('parties');
+  parties.push({ id: Date.now(), name, type });
+  saveData('parties', parties);
+  loadParties();
+  alert("Party Added");
+}
+
+function loadParties() {
+  const div = document.getElementById('partyList');
+  if (!div) return;
+  let parties = getData('parties');
+  div.innerHTML = parties.map(p => `<p>${p.name} (${p.type})</p>`).join('');
+}
+
+// Initialize on load
 window.onload = () => {
   checkLogin();
-  loadInvoices();
-  loadUsers();
+  if (document.getElementById('voucherDate')) {
+    document.getElementById('voucherDate').value = new Date().toISOString().split('T')[0];
+  }
+  loadParties();
+  renderItems();
 };
