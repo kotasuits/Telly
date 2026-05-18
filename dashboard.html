@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Tally</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <h2>Tally Billing</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="invoices.html">Invoices</a>
+    <a href="users.html">Users</a>
+    <button onclick="logout()">Logout</button>
+  </nav>
+
+  <div class="container">
+    <h1>Welcome, <span id="username"></span></h1>
+    <button onclick="exportAllToExcel()">📥 Download Full Ledger (Excel)</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
