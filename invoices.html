@@ -3,27 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invoices - Tally</title>
+  <title>Vouchers - Tally Billing</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav>
     <h2>Tally Billing</h2>
     <a href="dashboard.html">Dashboard</a>
-    <a href="invoices.html">Invoices</a>
+    <a href="invoices.html">Vouchers</a>
+    <a href="parties.html">Parties</a>
     <a href="users.html">Users</a>
     <button onclick="logout()">Logout</button>
   </nav>
 
   <div class="container">
-    <h2>Create New Invoice</h2>
-    <input type="text" id="customer" placeholder="Customer Name">
-    <input type="number" id="amount" placeholder="Amount">
-    <button onclick="createInvoice()">Create Invoice</button>
+    <h2>Create Voucher (Like Tally)</h2>
+    
+    <label>Voucher Type:</label>
+    <select id="voucherType">
+      <option value="Sales">Sales Invoice</option>
+      <option value="Purchase">Purchase</option>
+      <option value="Receipt">Receipt</option>
+      <option value="Payment">Payment</option>
+      <option value="Journal">Journal</option>
+    </select>
 
-    <h2>All Invoices</h2>
-    <div id="invoiceList"></div>
-    <button onclick="exportAllToExcel()">Download All to Excel</button>
+    <input type="text" id="partyName" placeholder="Party Name (Customer/Supplier)">
+    <input type="date" id="voucherDate">
+    <input type="text" id="voucherNo" placeholder="Voucher No (Auto)" readonly>
+
+    <h3>Items</h3>
+    <input type="text" id="itemName" placeholder="Item Name">
+    <input type="number" id="qty" placeholder="Qty" value="1">
+    <input type="number" id="rate" placeholder="Rate" step="0.01">
+    <button onclick="addItem()">Add Item</button>
+
+    <div id="itemList"></div>
+
+    <button onclick="saveVoucher()">Save Voucher (Like Tally)</button>
+    <button onclick="exportToExcel()">📥 Export All Vouchers to Excel</button>
   </div>
 
   <script src="script.js"></script>
